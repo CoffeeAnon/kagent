@@ -114,6 +114,35 @@ func TestActorTemplateForRevision(t *testing.T) {
 	require.NotNil(t, template.GoldenEgressPolicy)
 }
 
+func TestActorTemplateWakeupProbeTimeout(t *testing.T) {
+	for _, tc := range []struct {
+		name    string
+		seconds int32
+		want    int32
+	}{
+		{name: "unset keeps the default", seconds: 0, want: 30},
+		{name: "override reaches the probe", seconds: 120, want: 120},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			spec := &translator.Revision{ControlPlaneURL: testControlPlaneURL, CPU: "1", Memory: "1Gi",
+				Namespace: "agents", AgentName: "helper",
+				Image:          "agent.example/image@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+				WorkerPoolName: "default", SnapshotLocation: "snapshots",
+				WakeupProbeTimeoutSeconds: tc.seconds,
+				ConfigJSON:                []byte(`{}`), AgentCard: &a2apb.AgentCard{Name: "helper", Version: "v1", Capabilities: &a2apb.AgentCapabilities{Streaming: new(true)},
+					SupportedInterfaces: []*a2apb.AgentInterface{{Url: "http://127.0.0.1:80", ProtocolBinding: "GRPC", ProtocolVersion: "1.0"}}, DefaultInputModes: []string{"text"}, DefaultOutputModes: []string{"text"}},
+			}
+			revisionID, err := spec.Digest()
+			require.NoError(t, err)
+			bundle, err := spec.BootstrapBundle(revisionID)
+			require.NoError(t, err)
+			template, err := ActorTemplateForRevision(spec, revisionID, bundle)
+			require.NoError(t, err)
+			require.Equal(t, tc.want, template.GetContainers()[0].GetWakeupProbe().GetTimeoutSeconds())
+		})
+	}
+}
+
 func TestActorTemplateStampsTheRevisionOnTheResource(t *testing.T) {
 	for _, test := range []struct {
 		name        string

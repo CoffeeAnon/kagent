@@ -118,7 +118,7 @@ func ActorTemplateForRevision(spec *translator.Revision, revisionID translator.R
 			WakeupProbe: &ateapipb.WakeupProbe{HttpGet: &ateapipb.HttpGetAction{
 				Path: "/readyz",
 				Port: 8081,
-			}, TimeoutSeconds: 30},
+			}, TimeoutSeconds: wakeupProbeTimeout(spec.WakeupProbeTimeoutSeconds)},
 			VolumeMounts: []*ateapipb.VolumeMount{
 				{Name: durableDataVolume, MountPath: durableDataMount},
 				{Name: egressTrustVolume, MountPath: egressTrustMount},
@@ -277,4 +277,17 @@ func actorResources(cpu, memory string) (*ateapipb.ResourceRequirements, error) 
 		CpuMillicores: cpuQuantity.MilliValue(),
 		MemoryBytes:   memoryQuantity.Value(),
 	}}, nil
+}
+
+// defaultWakeupProbeTimeoutSeconds is how long Substrate waits for a runtime's
+// readiness probe when the Harness does not set a timeout.
+const defaultWakeupProbeTimeoutSeconds = 30
+
+// wakeupProbeTimeout returns the configured probe timeout, or the default when
+// the revision leaves it unset.
+func wakeupProbeTimeout(seconds int32) int32 {
+	if seconds == 0 {
+		return defaultWakeupProbeTimeoutSeconds
+	}
+	return seconds
 }

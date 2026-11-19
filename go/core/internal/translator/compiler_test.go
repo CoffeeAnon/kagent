@@ -843,6 +843,46 @@ func TestCompileAgentSharedADKConfig(t *testing.T) {
 	}
 }
 
+func TestCompileAgentCarriesWakeupProbeTimeout(t *testing.T) {
+	root := &v1alpha3.AgentTemplate{
+		ObjectMeta: metav1.ObjectMeta{Name: "coordinator", Namespace: "test", Labels: map[string]string{"runtime": "kagent"}},
+		Spec:       v1alpha3.AgentTemplateSpec{ModelConfig: &v1alpha3.ModelConfigReference{Name: "default-model"}, SystemPrompt: "coordinate"},
+	}
+	for _, kind := range []string{"kagent", "byo"} {
+		for _, tc := range []struct {
+			name    string
+			timeout *int32
+			want    int32
+		}{
+			{name: "unset", timeout: nil, want: 0},
+			{name: "set", timeout: new(int32(120)), want: 120},
+		} {
+			t.Run(kind+"/"+tc.name, func(t *testing.T) {
+				harness := &v1alpha3.Harness{
+					ObjectMeta: metav1.ObjectMeta{Name: "kagent", Namespace: "test"},
+					Spec: v1alpha3.HarnessSpec{
+						Kagent:   &v1alpha3.KagentHarness{},
+						Workload: v1alpha3.HarnessWorkload{Image: new("example.com/kagent@sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")},
+						Substrate: v1alpha3.RuntimeSubstratePolicy{
+							WorkerPoolRef:             corev1.LocalObjectReference{Name: "default"},
+							SnapshotPolicy:            v1alpha3.RuntimeSnapshotPolicy{Location: "snapshots"},
+							WakeupProbeTimeoutSeconds: tc.timeout,
+						},
+					},
+				}
+				if kind == "byo" {
+					harness.Spec.Kagent = nil
+					harness.Spec.BYO = &v1alpha3.BYOHarness{}
+					harness.Spec.Workload.Command = []string{"/app"}
+				}
+				revision, err := compiler(t, modelConfig(), harness).CompileAgent(context.Background(), inlineAgent(harness, root))
+				require.NoError(t, err)
+				require.Equal(t, tc.want, revision.WakeupProbeTimeoutSeconds)
+			})
+		}
+	}
+}
+
 func TestCompileAgentRejectsInvalidSharedTrees(t *testing.T) {
 	harness := &v1alpha3.Harness{ObjectMeta: metav1.ObjectMeta{Name: "kagent", Namespace: "test"}, Spec: v1alpha3.HarnessSpec{
 		Kagent: &v1alpha3.KagentHarness{},

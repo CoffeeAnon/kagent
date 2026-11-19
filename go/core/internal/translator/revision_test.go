@@ -49,6 +49,16 @@ func TestRevisionDigestReplacesNameOnlyWorkerPoolTemplate(t *testing.T) {
 	require.Equal(t, id, repeated)
 }
 
+func TestRevisionDigestIncludesWakeupProbeTimeout(t *testing.T) {
+	revision := &Revision{Namespace: "agents", AgentName: "helper"}
+	unset, err := revision.Digest()
+	require.NoError(t, err)
+	revision.WakeupProbeTimeoutSeconds = 120
+	raised, err := revision.Digest()
+	require.NoError(t, err)
+	require.NotEqual(t, unset, raised, "a new probe timeout changes the ActorTemplate, so it must create a new immutable revision")
+}
+
 func TestRevisionDigestExcludesProvenance(t *testing.T) {
 	revision := &Revision{Namespace: "agents", AgentName: "helper", Provenance: []byte(`[{"kind":"ConfigMap","hash":"first"}]`)}
 	first, err := revision.Digest()

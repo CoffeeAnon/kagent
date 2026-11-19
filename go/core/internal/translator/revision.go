@@ -67,6 +67,9 @@ type Revision struct {
 	WorkerPoolName   string
 	SandboxClass     atev1.SandboxClass
 	SnapshotLocation string
+	// WakeupProbeTimeoutSeconds bounds the runtime's readiness probe. Zero selects
+	// Substrate's default of 30 seconds.
+	WakeupProbeTimeoutSeconds int32
 
 	// Provenance records non-secret source configuration for diagnostics. Revision
 	// identity comes from compiled runtime inputs, not this source snapshot.
@@ -116,6 +119,7 @@ func (r *Revision) Digest() (RevisionID, error) {
 		SkillImages             []SkillImage                 `json:"skillImages,omitempty"`
 		WorkerPoolName          string                       `json:"workerPoolName"`
 		SnapshotLocation        string                       `json:"snapshotLocation"`
+		WakeupProbeTimeout      int32                        `json:"wakeupProbeTimeoutSeconds,omitempty"`
 		Credentials             []egress.Credential          `json:"credentials,omitempty"`
 		TokenPassthroughTargets []egresspolicy.GatewayTarget `json:"tokenPassthroughTargets,omitempty"`
 		EgressDestinations      []string                     `json:"egressDestinations"`
@@ -130,7 +134,7 @@ func (r *Revision) Digest() (RevisionID, error) {
 		CPU: r.CPU, Memory: r.Memory,
 		Image: r.Image, Command: r.Command, Args: r.Args, Environment: r.Environment, ConfigJSON: r.ConfigJSON,
 		SkillImages:    r.SkillImages,
-		WorkerPoolName: r.WorkerPoolName, SnapshotLocation: r.SnapshotLocation,
+		WorkerPoolName: r.WorkerPoolName, SnapshotLocation: r.SnapshotLocation, WakeupProbeTimeout: r.WakeupProbeTimeoutSeconds,
 		TokenPassthroughTargets: r.TokenPassthroughTargets, Credentials: r.Credentials, EgressDestinations: r.EgressDestinations,
 		SandboxClass: sandboxClass, WorkerPoolNamespace: r.Namespace,
 	})

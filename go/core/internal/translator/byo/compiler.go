@@ -12,6 +12,7 @@ import (
 	"github.com/a2aproject/a2a-go/v2/a2apb/v1/pbconv"
 	"istio.io/istio/pkg/kube/krt"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/utils/ptr"
 
 	runtimeconfig "github.com/kagent-dev/kagent/go/adk/pkg/config"
 	configv1 "github.com/kagent-dev/kagent/go/api/gen/kagent/config/v1"
@@ -85,7 +86,8 @@ func (c *Compiler) Compile(ctx context.Context, input *translator.HarnessInput) 
 		Environment: environment, ConfigJSON: configJSON, AgentCard: card,
 		SkillImages:    compiled.SkillImages,
 		WorkerPoolName: harness.Spec.Substrate.WorkerPoolRef.Name, SnapshotLocation: harness.Spec.Substrate.SnapshotPolicy.Location,
-		TokenPassthroughTargets: tokenPassthroughTargets, Credentials: credentials, Provenance: provenance, EgressDestinations: slices.Compact(compiled.Egress),
+		WakeupProbeTimeoutSeconds: ptr.Deref(harness.Spec.Substrate.WakeupProbeTimeoutSeconds, 0),
+		TokenPassthroughTargets:   tokenPassthroughTargets, Credentials: credentials, Provenance: provenance, EgressDestinations: slices.Compact(compiled.Egress),
 	}}, nil
 }
 

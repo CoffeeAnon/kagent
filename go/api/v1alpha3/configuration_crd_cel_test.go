@@ -345,6 +345,29 @@ func TestConfigurationCRDValidation(t *testing.T) {
 			}),
 		},
 		{
+			name: "Harness accepts a wakeup probe timeout",
+			object: validHarness(namespace, "harness-probe-timeout", HarnessSpec{
+				Kagent:    &KagentHarness{},
+				Substrate: RuntimeSubstratePolicy{WakeupProbeTimeoutSeconds: new(int32(120))},
+			}),
+		},
+		{
+			name: "Harness rejects a zero wakeup probe timeout",
+			object: validHarness(namespace, "harness-probe-timeout-zero", HarnessSpec{
+				Kagent:    &KagentHarness{},
+				Substrate: RuntimeSubstratePolicy{WakeupProbeTimeoutSeconds: new(int32(0))},
+			}),
+			wantReject: "spec.substrate.wakeupProbeTimeoutSeconds",
+		},
+		{
+			name: "Harness rejects a wakeup probe timeout above ten minutes",
+			object: validHarness(namespace, "harness-probe-timeout-high", HarnessSpec{
+				Kagent:    &KagentHarness{},
+				Substrate: RuntimeSubstratePolicy{WakeupProbeTimeoutSeconds: new(int32(601))},
+			}),
+			wantReject: "spec.substrate.wakeupProbeTimeoutSeconds",
+		},
+		{
 			name: "valid Harness",
 			object: validHarness(namespace, "valid-harness", HarnessSpec{
 				Claude: &ClaudeHarness{},

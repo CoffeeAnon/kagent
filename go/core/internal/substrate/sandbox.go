@@ -11,6 +11,7 @@ import (
 	atev1 "go.ate.dev/substrate/api/infra/k8s/ate/v1"
 	"google.golang.org/protobuf/proto"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	"github.com/kagent-dev/kagent/go/api/v1alpha3"
 	"github.com/kagent-dev/kagent/go/core/internal/image"
@@ -79,7 +80,7 @@ func SandboxActorTemplate(template *v1alpha3.SandboxTemplate, class atev1.Sandbo
 			Command:      []string{"/run/kagent/guest/usr/local/bin/kagent-sandbox-guest"},
 			Args:         []string{"--listen=:80", "--workspace=/data/workspace", "--log-dir=/data/guest-logs"},
 			Env:          environment,
-			WakeupProbe:  &ateapipb.WakeupProbe{HttpGet: &ateapipb.HttpGetAction{Path: "/readyz", Port: 80}, TimeoutSeconds: 30},
+			WakeupProbe:  &ateapipb.WakeupProbe{HttpGet: &ateapipb.HttpGetAction{Path: "/readyz", Port: 80}, TimeoutSeconds: wakeupProbeTimeout(ptr.Deref(template.Spec.Substrate.WakeupProbeTimeoutSeconds, 0))},
 			VolumeMounts: []*ateapipb.VolumeMount{{Name: durableDataVolume, MountPath: durableDataMount}, {Name: "guest", MountPath: "/run/kagent/guest"}, {Name: egressTrustVolume, MountPath: egressTrustMount}},
 		}},
 		Volumes: []*ateapipb.Volume{
