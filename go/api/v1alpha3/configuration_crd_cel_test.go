@@ -536,6 +536,26 @@ func TestConfigurationCRDValidation(t *testing.T) {
 			wantReject: "spec.substrate.snapshotPolicy.location",
 		},
 		{
+			name: "SandboxTemplate accepts a wakeup probe timeout",
+			object: sandboxTemplateForValidation(namespace, "sandbox-probe-timeout", func(spec *SandboxTemplateSpec) {
+				spec.Substrate.WakeupProbeTimeoutSeconds = new(int32(120))
+			}),
+		},
+		{
+			name: "SandboxTemplate rejects a zero wakeup probe timeout",
+			object: sandboxTemplateForValidation(namespace, "sandbox-probe-timeout-zero", func(spec *SandboxTemplateSpec) {
+				spec.Substrate.WakeupProbeTimeoutSeconds = new(int32(0))
+			}),
+			wantReject: "spec.substrate.wakeupProbeTimeoutSeconds",
+		},
+		{
+			name: "SandboxTemplate rejects a wakeup probe timeout above ten minutes",
+			object: sandboxTemplateForValidation(namespace, "sandbox-probe-timeout-high", func(spec *SandboxTemplateSpec) {
+				spec.Substrate.WakeupProbeTimeoutSeconds = new(int32(601))
+			}),
+			wantReject: "spec.substrate.wakeupProbeTimeoutSeconds",
+		},
+		{
 			name:   "SandboxTemplate allows empty literal environment values",
 			object: sandboxTemplateForValidation(namespace, "sandbox-empty-literal", func(spec *SandboxTemplateSpec) { spec.Env = []RuntimeEnvVar{{Name: "EMPTY", Value: ""}} }),
 		},

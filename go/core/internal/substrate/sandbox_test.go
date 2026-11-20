@@ -56,6 +56,9 @@ func TestSandboxPreparationPinsCompleteInputs(t *testing.T) {
 		{"identity", func(s *v1alpha3.SandboxTemplate, _ *SandboxPolicy) { s.UID = "new" }, ""},
 		{"resources", func(_ *v1alpha3.SandboxTemplate, p *SandboxPolicy) { p.Memory = "2Gi" }, ""},
 		{"class", func(_ *v1alpha3.SandboxTemplate, _ *SandboxPolicy) {}, atev1.SandboxClassMicroVM},
+		{"wakeup probe timeout", func(s *v1alpha3.SandboxTemplate, _ *SandboxPolicy) {
+			s.Spec.Substrate.WakeupProbeTimeoutSeconds = new(int32(120))
+		}, ""},
 	} {
 		t.Run(change.name, func(t *testing.T) {
 			input, settings := template.DeepCopy(), policy
@@ -98,4 +101,18 @@ func TestSandboxActorTemplateWakeupProbeTimeout(t *testing.T) {
 			require.Equal(t, tc.want, actor.GetContainers()[0].GetWakeupProbe().GetTimeoutSeconds())
 		})
 	}
+}
+
+func TestSandboxDigestKeepsExistingIdentityWhenWakeupProbeTimeoutIsUnset(t *testing.T) {
+	// The digest predates the field; changing it would recreate every sandbox ActorTemplate.
+	template := &v1alpha3.SandboxTemplate{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "scratch", UID: "uid"}, Spec: v1alpha3.SandboxTemplateSpec{
+		Workload:  v1alpha3.SandboxTemplateWorkload{Image: "tools@sha256:" + strings.Repeat("a", 64)},
+		Substrate: v1alpha3.RuntimeSubstratePolicy{WorkerPoolRef: corev1.LocalObjectReference{Name: "default"}, SnapshotPolicy: v1alpha3.RuntimeSnapshotPolicy{Location: "s3://snapshots/"}},
+	}}
+	policy := SandboxPolicy{GuestImage: "guest@sha256:" + strings.Repeat("b", 64), CPU: "1", Memory: "1Gi"}
+
+	_, digest, _, err := SandboxActorTemplate(template, "", policy)
+
+	require.NoError(t, err)
+	require.Equal(t, "d2db92837776f95575700b02ce9c1bd09d7a5492676ea364b99f0603cac64db7", digest)
 }
