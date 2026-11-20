@@ -11,6 +11,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/stretchr/testify/require"
 	"istio.io/istio/pkg/kube/krt"
 	"istio.io/istio/pkg/kube/krt/krttest"
 	corev1 "k8s.io/api/core/v1"
@@ -249,6 +250,34 @@ func TestCompileMCPCompatibilityWarnings(t *testing.T) {
 	server.Spec.Protocol = v1alpha3.RemoteMCPServerProtocolSse
 	if _, err := NewCompiler(krt.TestingDummyContext{}, reader, testRuntimeDefaults()).Compile(context.Background(), input); err == nil || !strings.Contains(err.Error(), "requires Streamable HTTP") {
 		t.Fatalf("unsupported MCP protocol Compile() error = %v", err)
+	}
+}
+
+func TestCompileCarriesWakeupProbeTimeout(t *testing.T) {
+	responses := v1alpha3.OpenAIAPIFormatResponses
+	model := v1alpha3.ModelConfigSpec{
+		Provider: v1alpha3.ModelProviderOpenAI, Model: "gpt-5.2-codex",
+		APIKeySecret: "model-auth", APIKeySecretKey: "api-key",
+		OpenAI: &v1alpha3.OpenAIConfig{APIFormat: &responses},
+	}
+	tests := []struct {
+		name    string
+		timeout *int32
+		want    *int32
+	}{
+		{name: "unset stays unset", timeout: nil, want: nil},
+		{name: "configured value reaches the revision", timeout: new(int32(120)), want: new(int32(120))},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			input, reader := testInput(t, model, map[string][]byte{"api-key": []byte("secret")})
+			input.Harness.Spec.Substrate.WakeupProbeTimeoutSeconds = tc.timeout
+
+			result, err := NewCompiler(krt.TestingDummyContext{}, reader, testRuntimeDefaults()).Compile(context.Background(), input)
+
+			require.NoError(t, err)
+			require.Equal(t, tc.want, result.WakeupProbeTimeoutSeconds)
+		})
 	}
 }
 

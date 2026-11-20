@@ -50,13 +50,42 @@ func TestRevisionDigestReplacesNameOnlyWorkerPoolTemplate(t *testing.T) {
 }
 
 func TestRevisionDigestIncludesWakeupProbeTimeout(t *testing.T) {
+	tests := []struct {
+		name     string
+		first    *int32
+		second   *int32
+		wantSame bool
+	}{
+		{name: "unset against set", first: nil, second: new(int32(120)), wantSame: false},
+		{name: "different values", first: new(int32(60)), second: new(int32(120)), wantSame: false},
+		{name: "equal values", first: new(int32(120)), second: new(int32(120)), wantSame: true},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			// Given two revisions that differ only in the wakeup probe timeout, when
+			// they are hashed, assert that a different timeout is a different
+			// immutable revision, because it changes the ActorTemplate.
+			first := &Revision{Namespace: "agents", AgentName: "helper", WakeupProbeTimeoutSeconds: tc.first}
+			second := &Revision{Namespace: "agents", AgentName: "helper", WakeupProbeTimeoutSeconds: tc.second}
+
+			firstID, err := first.Digest()
+			require.NoError(t, err)
+			secondID, err := second.Digest()
+			require.NoError(t, err)
+
+			require.Equal(t, tc.wantSame, firstID == secondID)
+		})
+	}
+}
+
+func TestRevisionDigestKeepsExistingIdentityWhenWakeupProbeTimeoutIsUnset(t *testing.T) {
+	// The digest predates the field; changing it would recreate every ActorTemplate.
 	revision := &Revision{Namespace: "agents", AgentName: "helper"}
-	unset, err := revision.Digest()
+
+	id, err := revision.Digest()
+
 	require.NoError(t, err)
-	revision.WakeupProbeTimeoutSeconds = 120
-	raised, err := revision.Digest()
-	require.NoError(t, err)
-	require.NotEqual(t, unset, raised, "a new probe timeout changes the ActorTemplate, so it must create a new immutable revision")
+	require.Equal(t, "bff4bb082803b08428adebd53bb959f35d51e8fb4a8c472f4ee51d321b57d222", id.String())
 }
 
 func TestRevisionDigestExcludesProvenance(t *testing.T) {

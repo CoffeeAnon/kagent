@@ -16,6 +16,7 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/resource"
 	"k8s.io/apimachinery/pkg/types"
+	"k8s.io/utils/ptr"
 
 	"github.com/kagent-dev/kagent/go/api/bootstrap"
 	runtimev1 "github.com/kagent-dev/kagent/go/api/gen/kagent/runtime/v1"
@@ -279,15 +280,9 @@ func actorResources(cpu, memory string) (*ateapipb.ResourceRequirements, error) 
 	}}, nil
 }
 
-// defaultWakeupProbeTimeoutSeconds is how long Substrate waits for a runtime's
-// readiness probe when the Harness does not set a timeout.
 const defaultWakeupProbeTimeoutSeconds = 30
 
-// wakeupProbeTimeout returns the configured probe timeout, or the default when
-// the revision leaves it unset.
-func wakeupProbeTimeout(seconds int32) int32 {
-	if seconds == 0 {
-		return defaultWakeupProbeTimeoutSeconds
-	}
-	return seconds
+// wakeupProbeTimeout returns the configured probe timeout or the default.
+func wakeupProbeTimeout(seconds *int32) int32 {
+	return ptr.Deref(seconds, defaultWakeupProbeTimeoutSeconds)
 }

@@ -117,11 +117,12 @@ func TestActorTemplateForRevision(t *testing.T) {
 func TestActorTemplateWakeupProbeTimeout(t *testing.T) {
 	for _, tc := range []struct {
 		name    string
-		seconds int32
+		seconds *int32
 		want    int32
 	}{
-		{name: "unset keeps the default", seconds: 0, want: 30},
-		{name: "override reaches the probe", seconds: 120, want: 120},
+		{name: "unset keeps the default", seconds: nil, want: 30},
+		{name: "override reaches the probe", seconds: new(int32(120)), want: 120},
+		{name: "upper bound reaches the probe", seconds: new(int32(600)), want: 600},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			spec := &translator.Revision{ControlPlaneURL: testControlPlaneURL, CPU: "1", Memory: "1Gi",

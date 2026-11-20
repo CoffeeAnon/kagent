@@ -67,9 +67,8 @@ type Revision struct {
 	WorkerPoolName   string
 	SandboxClass     atev1.SandboxClass
 	SnapshotLocation string
-	// WakeupProbeTimeoutSeconds bounds the runtime's readiness probe. Zero selects
-	// Substrate's default of 30 seconds.
-	WakeupProbeTimeoutSeconds int32
+	// WakeupProbeTimeoutSeconds overrides the readiness probe timeout. Nil keeps the default.
+	WakeupProbeTimeoutSeconds *int32
 
 	// Provenance records non-secret source configuration for diagnostics. Revision
 	// identity comes from compiled runtime inputs, not this source snapshot.
@@ -119,7 +118,7 @@ func (r *Revision) Digest() (RevisionID, error) {
 		SkillImages             []SkillImage                 `json:"skillImages,omitempty"`
 		WorkerPoolName          string                       `json:"workerPoolName"`
 		SnapshotLocation        string                       `json:"snapshotLocation"`
-		WakeupProbeTimeout      int32                        `json:"wakeupProbeTimeoutSeconds,omitempty"`
+		WakeupProbeTimeout      *int32                       `json:"wakeupProbeTimeoutSeconds,omitempty"`
 		Credentials             []egress.Credential          `json:"credentials,omitempty"`
 		TokenPassthroughTargets []egresspolicy.GatewayTarget `json:"tokenPassthroughTargets,omitempty"`
 		EgressDestinations      []string                     `json:"egressDestinations"`

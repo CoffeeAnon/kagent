@@ -132,7 +132,7 @@ func (c *Compiler) Compile(ctx context.Context, input *translator.HarnessInput) 
 			ConfigJSON:      configJSON, AgentCard: card,
 			WorkerPoolName:            harness.Spec.Substrate.WorkerPoolRef.Name,
 			SnapshotLocation:          harness.Spec.Substrate.SnapshotPolicy.Location,
-			WakeupProbeTimeoutSeconds: ptr.Deref(harness.Spec.Substrate.WakeupProbeTimeoutSeconds, 0),
+			WakeupProbeTimeoutSeconds: harness.Spec.Substrate.WakeupProbeTimeoutSeconds,
 			TokenPassthroughTargets:   tokenPassthroughTargets, Credentials: credentials, Provenance: provenance, EgressDestinations: egress,
 		},
 		Warnings: mcp.warnings,

@@ -70,3 +70,32 @@ func TestSandboxPreparationPinsCompleteInputs(t *testing.T) {
 	require.ErrorContains(t, err, "reserved")
 	require.Nil(t, actor)
 }
+
+func TestSandboxActorTemplateWakeupProbeTimeout(t *testing.T) {
+	tests := []struct {
+		name    string
+		seconds *int32
+		want    int32
+	}{
+		{name: "unset keeps the default", seconds: nil, want: 30},
+		{name: "override reaches the probe", seconds: new(int32(120)), want: 120},
+	}
+	for _, tc := range tests {
+		t.Run(tc.name, func(t *testing.T) {
+			template := &v1alpha3.SandboxTemplate{ObjectMeta: metav1.ObjectMeta{Namespace: "team-a", Name: "scratch", UID: "uid"}, Spec: v1alpha3.SandboxTemplateSpec{
+				Workload: v1alpha3.SandboxTemplateWorkload{Image: "tools@sha256:" + strings.Repeat("a", 64)},
+				Substrate: v1alpha3.RuntimeSubstratePolicy{
+					WorkerPoolRef:             corev1.LocalObjectReference{Name: "default"},
+					SnapshotPolicy:            v1alpha3.RuntimeSnapshotPolicy{Location: "s3://snapshots/"},
+					WakeupProbeTimeoutSeconds: tc.seconds,
+				},
+			}}
+			policy := SandboxPolicy{GuestImage: "guest@sha256:" + strings.Repeat("b", 64), CPU: "1", Memory: "1Gi"}
+
+			actor, _, _, err := SandboxActorTemplate(template, "", policy)
+
+			require.NoError(t, err)
+			require.Equal(t, tc.want, actor.GetContainers()[0].GetWakeupProbe().GetTimeoutSeconds())
+		})
+	}
+}

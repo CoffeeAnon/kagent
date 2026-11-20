@@ -285,11 +285,9 @@ millicores and memory bytes for every harness, rounding positive fractions up
 to the next unit. Standalone sandbox limits remain under `sandboxes` configuration.
 
 `spec.substrate.wakeupProbeTimeoutSeconds` sets how long Substrate waits for the
-runtime's `/readyz` probe after the container starts, on golden builds and on
-every resume. It accepts 1 to 600 and defaults to 30 when unset. A slow runtime
-that misses the window fails with `GoldenActorCrashed`. The value is compiled
-into the revision, so changing it creates a new ActorTemplate. SandboxTemplate
-accepts the same field.
+runtime's `/readyz` probe on golden builds and resumes. It accepts 1 to 600 and
+defaults to 30. Changing it creates a new revision. SandboxTemplate accepts the
+same field.
 
 Harness and SandboxTemplate snapshot locations require Substrate's
 `PerTemplateSnapshotLocation` preview gate; configuration bootstrap requires

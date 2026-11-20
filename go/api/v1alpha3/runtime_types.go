@@ -39,12 +39,8 @@ type RuntimeSubstratePolicy struct {
 	// +required
 	SnapshotPolicy RuntimeSnapshotPolicy `json:"snapshotPolicy"`
 
-	// WakeupProbeTimeoutSeconds is how long Substrate waits for the runtime to
-	// answer its readiness probe after the container starts, on a golden build
-	// and on every resume. A runtime that is not ready in time fails with
-	// GoldenActorCrashed. Raise it for runtimes with a large import tree or on
-	// slow nodes. The value is capped at 600 so a runtime that never becomes
-	// ready still fails within ten minutes. Defaults to 30 when unset.
+	// WakeupProbeTimeoutSeconds is how long Substrate waits for the runtime's
+	// readiness probe to succeed after it starts. Defaults to 30 when unset.
 	// +kubebuilder:validation:Minimum=1
 	// +kubebuilder:validation:Maximum=600
 	// +optional
